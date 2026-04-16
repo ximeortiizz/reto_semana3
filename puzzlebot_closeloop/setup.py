@@ -30,6 +30,8 @@ setup(
         'console_scripts': [
             'controller_sqr= puzzlebot_closeloop.controller_sqr:main',
             'puzzlebot_odometry= puzzlebot_closeloop.puzzlebot_odometry:main',
+            'path_generator_node= puzzlebot_closeloop.path_generator_node:main',
+            'controller_path= puzzlebot_closeloop.controller_path:main',
         ],
     },
 )
