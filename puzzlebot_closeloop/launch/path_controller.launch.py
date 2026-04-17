@@ -7,7 +7,6 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('puzzlebot_closeloop')
     params_file = os.path.join(pkg_share, 'config', 'puzzlebot_params.yaml')
 
-    # Nodo de Odometría
     odom_node = Node(
         package='puzzlebot_closeloop',
         executable='puzzlebot_odometry', 
@@ -16,7 +15,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Nodo Controlador
     controller_node = Node(
         package='puzzlebot_closeloop',
         executable='controller_path',
@@ -25,7 +23,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Nodo Generador de Trayectoria
     path_gen_node = Node(
         package='puzzlebot_closeloop',
         executable='path_generator_node',

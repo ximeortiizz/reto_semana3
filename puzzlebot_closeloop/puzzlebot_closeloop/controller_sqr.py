@@ -10,7 +10,6 @@ class SquareController(Node):
     def __init__(self):
         super().__init__('controller_sqr')
 
-        # Parámetros
         self.declare_parameter('odom_topic', '/odom')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('control_period', 0.1)
@@ -22,7 +21,7 @@ class SquareController(Node):
         self.declare_parameter('goal_tolerance', 0.05)
         self.declare_parameter('theta_tolerance', 0.15)
 
-        # Goals como lista plana
+        #goals
         self.declare_parameter('goals', [
             2.0, 0.0,
             2.0, 2.0,
@@ -30,7 +29,6 @@ class SquareController(Node):
             0.0, 0.0
         ])
 
-        # Leer parámetros
         self.odom_topic = self.get_parameter('odom_topic').value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
         self.control_period = float(self.get_parameter('control_period').value)
@@ -55,7 +53,7 @@ class SquareController(Node):
             for i in range(0, len(raw_goals), 2)
         ]
 
-        # Estado del robot
+        #estado del robot
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
@@ -66,7 +64,6 @@ class SquareController(Node):
         self.x_hist = []
         self.y_hist = []
 
-        # Pub/Sub
         self.odom_sub = self.create_subscription(
             Odometry,
             self.odom_topic,
@@ -89,8 +86,8 @@ class SquareController(Node):
         plt.ion()
         self.fig, self.ax = plt.subplots()
         self.ax.set_title("Trayectoria en Tiempo Real")
-        self.line, = self.ax.plot([], [], 'b-') # El '-' es para que sea una línea
-        self.ax.grid(True) # Opcional, ayuda a ver el movimiento
+        self.line, = self.ax.plot([], [], 'b-')
+        self.ax.grid(True) 
     
     def odom_callback(self, msg):
         self.x = msg.pose.pose.position.x
@@ -144,12 +141,11 @@ class SquareController(Node):
         desired_theta = math.atan2(dy, dx)
         theta_error = self.normalize_angle(desired_theta - self.theta)
 
-        if self.x_hist: # Solo si hay datos
+        if self.x_hist: 
             self.line.set_data(self.x_hist, self.y_hist)
             self.ax.relim()
             self.ax.autoscale_view()
             
-            # Estas líneas son las que "limpian" el blanco de la ventana
             self.fig.canvas.flush_events()
             plt.pause(0.001)
 

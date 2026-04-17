@@ -9,11 +9,9 @@ class PathGenerator(Node):
     def __init__(self):
         super().__init__('path_generator_node')
         
-        # 1. DECLARACIÓN DE PARÁMETROS
         self.declare_parameter('modo', 1)
         self.declare_parameter('puntos_manuales', [2.0, 0.0, 2.0, 2.0, 0.0, 2.0, 0.0, 0.0])
 
-        # 2. VARIABLES DE ESTADO
         self.goal_tolerance = 0.1
         self.path = []
         self.current_goal_idx = 0
@@ -24,14 +22,11 @@ class PathGenerator(Node):
         self._SAFE_V_MAX = 0.3  
         self._SAFE_W_MAX = 0.7   
 
-        # 3. COMUNICACIONES
         self.goal_pub = self.create_publisher(MakbetsPose, '/goal', 10)
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         
-        # Callback para cambios en rqt_reconfigure
         self.add_on_set_parameters_callback(self.parameter_callback)
 
-        # 4. CONFIGURACIÓN INICIAL
         self.configurar_trayectoria()
         self.timer = self.create_timer(0.5, self.control_rutas)
         
@@ -45,7 +40,6 @@ class PathGenerator(Node):
         return True
 
     def configurar_trayectoria(self):
-        """Carga la ruta según el modo seleccionado"""
         modo = self.get_parameter('modo').value
         
         if modo == 1:
@@ -70,11 +64,8 @@ class PathGenerator(Node):
         self.verificar_viabilidad()
 
     def parameter_callback(self, params):
-        """Este callback se activa cuando mueves algo en rqt_reconfigure"""
         for param in params:
             if param.name == 'modo' or param.name == 'puntos_manuales':
-                # En lugar de usar un timer con errores, usamos este truco:
-                # El nodo ejecutará configurar_trayectoria en el siguiente ciclo disponible
                 self.get_logger().info(f"Actualizando a {param.name}...")
                 self.executor.create_task(self.configurar_trayectoria)                
         return SetParametersResult(successful=True)

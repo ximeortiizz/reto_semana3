@@ -14,13 +14,12 @@ class DeadReckoning(Node):
     def __init__(self):
         super().__init__('puzzlebot_odometry')
 
-        # VALORES FIJOS (HARDCODED) - YA NO SON PARÁMETROS
-        self.r = 0.05            # Radio de la rueda (wheel_radius)
-        self.L = 0.19            # Distancia entre ruedas (wheel_base)
+        self.r = 0.05            # Radio de la rueda 
+        self.L = 0.19            # Distancia entre ruedas 
         self.odom_topic = '/odom'
         self.encR_topic = '/VelocityEncR'
         self.encL_topic = '/VelocityEncL'
-        self.Ts = 0.02           # Tiempo de muestreo (sample_time)
+        self.Ts = 0.02           # Tiempo de muestreo 
 
         # Estado del robot
         self.x = 0.0
@@ -33,14 +32,13 @@ class DeadReckoning(Node):
         self.encL_received = False
         self.waiting_logged = False
 
-        # Perfil QoS para Best Effort (común en micro-ROS / Encoders)
+        # Perfil QoS para Best Effort
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
             depth=10
         )
 
-        # Subscripciones
         self.encR_sub = self.create_subscription(
             Float32, 
             self.encR_topic, 
@@ -55,11 +53,9 @@ class DeadReckoning(Node):
             qos_profile
         )
 
-        # Publicadores
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
         self.tf_broadcaster = TransformBroadcaster(self)
         
-        # Timer de ejecución principal
         self.timer = self.create_timer(self.Ts, self.run)
 
         self.get_logger().info("Localisation Node Started (Static Mode).")
@@ -118,7 +114,6 @@ class DeadReckoning(Node):
 
         self.odom_pub.publish(odom_msg)
 
-        # Transformada TF
         t = TransformStamped()
         t.header.stamp = current_time
         t.header.frame_id = 'odom'

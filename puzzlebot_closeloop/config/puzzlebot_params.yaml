@@ -35,5 +35,5 @@ controller_path:
 
 path_generator_node:
   ros__parameters:
-    modo: 4
+    modo: 1
     puntos_manuales: [2.0, 0.0, 2.0, 2.0, 0.0, 2.0, 0.0, 0.0]
