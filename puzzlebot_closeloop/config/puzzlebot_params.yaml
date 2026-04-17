@@ -24,3 +24,16 @@ controller_sqr:
             2.0, 2.0,
             0.0, 2.0,
             0.0, 0.0]
+
+            
+controller_path:
+  ros__parameters:
+    kp_dist: 0.9
+    kp_theta: 0.3
+    theta_tolerance: 0.15
+    goal_tolerance: 0.1
+
+path_generator_node:
+  ros__parameters:
+    modo: 4
+    puntos_manuales: [2.0, 0.0, 2.0, 2.0, 0.0, 2.0, 0.0, 0.0]

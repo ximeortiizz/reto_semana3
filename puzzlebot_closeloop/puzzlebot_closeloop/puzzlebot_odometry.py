@@ -14,20 +14,15 @@ class DeadReckoning(Node):
     def __init__(self):
         super().__init__('puzzlebot_odometry')
 
-        self.declare_parameter('wheel_radius', 0.05)
-        self.declare_parameter('wheel_base', 0.19)
-        self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('encR_topic', '/VelocityEncR')
-        self.declare_parameter('encL_topic', '/VelocityEncL')
-        self.declare_parameter('sample_time', 0.02)
+        # VALORES FIJOS (HARDCODED) - YA NO SON PARÁMETROS
+        self.r = 0.05            # Radio de la rueda (wheel_radius)
+        self.L = 0.19            # Distancia entre ruedas (wheel_base)
+        self.odom_topic = '/odom'
+        self.encR_topic = '/VelocityEncR'
+        self.encL_topic = '/VelocityEncL'
+        self.Ts = 0.02           # Tiempo de muestreo (sample_time)
 
-        self.r = float(self.get_parameter('wheel_radius').value)
-        self.L = float(self.get_parameter('wheel_base').value)
-        self.odom_topic = self.get_parameter('odom_topic').value
-        self.encR_topic = self.get_parameter('encR_topic').value
-        self.encL_topic = self.get_parameter('encL_topic').value
-        self.Ts = float(self.get_parameter('sample_time').value)
-
+        # Estado del robot
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
@@ -38,37 +33,39 @@ class DeadReckoning(Node):
         self.encL_received = False
         self.waiting_logged = False
 
-        # Definir el perfil que acepta Best Effort
+        # Perfil QoS para Best Effort (común en micro-ROS / Encoders)
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
             depth=10
         )
 
+        # Subscripciones
         self.encR_sub = self.create_subscription(
             Float32, 
             self.encR_topic, 
             self.encR_callback, 
-            qos_profile  # <--- Aplicar el perfil aquí
+            qos_profile
         )
 
         self.encL_sub = self.create_subscription(
             Float32, 
             self.encL_topic, 
             self.encL_callback, 
-            qos_profile  # <--- Aplicar el perfil aquí
+            qos_profile
         )
 
+        # Publicadores
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
         self.tf_broadcaster = TransformBroadcaster(self)
+        
+        # Timer de ejecución principal
         self.timer = self.create_timer(self.Ts, self.run)
 
-        self.get_logger().info("Localisation Node Started.")
+        self.get_logger().info("Localisation Node Started (Static Mode).")
         self.get_logger().info(f"Subscribing to {self.encR_topic} and {self.encL_topic}")
-        self.get_logger().info(f"Publishing odometry on {self.odom_topic}")
 
     def encR_callback(self, msg):
-        self.get_logger().info(f'CALLBACK ENCODER R: {msg.data}') # <--- AÑADE ESTO
         self.wr = float(msg.data)
         self.encR_received = True
 
@@ -87,29 +84,22 @@ class DeadReckoning(Node):
         return qx, qy, qz, qw
 
     def run(self):
-        # if not (self.encR_received and self.encL_received):
-            # if not self.waiting_logged:
-                # self.get_logger().info("Waiting for encoder data...")
-                # self.waiting_logged = True
-            # return
-
         self.waiting_logged = False
 
+        # Modelo cinemático diferencial
         v = self.r * (self.wr + self.wl) / 2.0
         w = self.r * (self.wr - self.wl) / self.L
 
-        self.get_logger().info(f"Velocidades: R={self.wr}, L={self.wl} | V={v}")
-        self.get_logger().info(f'Calculando con: wr={self.wr}, wl={self.wl}') # <--- AÑADE ESTO
-
+        # Integración de Euler
         self.x += v * np.cos(self.theta) * self.Ts
         self.y += v * np.sin(self.theta) * self.Ts
         self.theta += w * self.Ts
         self.theta = self.normalize_angle(self.theta)
 
         qx, qy, qz, qw = self.yaw_to_quaternion(self.theta)
-
         current_time = self.get_clock().now().to_msg()
 
+        # Mensaje de Odometría
         odom_msg = Odometry()
         odom_msg.header.stamp = current_time
         odom_msg.header.frame_id = 'odom'
@@ -124,11 +114,11 @@ class DeadReckoning(Node):
         odom_msg.pose.pose.orientation.w = float(qw)
 
         odom_msg.twist.twist.linear.x = float(v)
-        odom_msg.twist.twist.linear.y = 0.0
         odom_msg.twist.twist.angular.z = float(w)
 
         self.odom_pub.publish(odom_msg)
 
+        # Transformada TF
         t = TransformStamped()
         t.header.stamp = current_time
         t.header.frame_id = 'odom'
@@ -148,21 +138,18 @@ class DeadReckoning(Node):
         self.get_logger().info("Interrupt received! Stopping node...")
         raise SystemExit
 
-
 def main(args=None):
     rclpy.init(args=args)
-
     node = DeadReckoning()
     signal.signal(signal.SIGINT, node.stop_handler)
 
     try:
         rclpy.spin(node)
     except SystemExit:
-        node.get_logger().info('SystemExit triggered. Shutting down cleanly.')
+        node.get_logger().info('Shutting down cleanly.')
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

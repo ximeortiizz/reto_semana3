@@ -12,8 +12,8 @@ class ControllerPath(Node):
         super().__init__('controller_path')
 
         # Parámetros de control
-        self.declare_parameter('kp_dist', 1.0)
-        self.declare_parameter('kp_theta', 3.0)
+        self.declare_parameter('kp_dist', 0.9)
+        self.declare_parameter('kp_theta', 0.3)
         self.declare_parameter('theta_tolerance', 0.15)
         self.declare_parameter('goal_tolerance', 0.1)
 
